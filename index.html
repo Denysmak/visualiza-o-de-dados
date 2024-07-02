@@ -11,7 +11,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, child, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, query, orderByChild, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyBToDPzjhQkgBwDciL7FXKtHzir05l1KYg",
@@ -29,11 +29,17 @@
     document.getElementById('export-btn').addEventListener('click', exportToExcel);
 
     function exportToExcel() {
-        const dbRef = ref(db);
-        get(child(dbRef, 'emails')).then((snapshot) => {
+        const emailsRef = ref(db, 'emails');
+        const orderedEmailsQuery = query(emailsRef, orderByChild('timestamp'));
+
+        get(orderedEmailsQuery).then((snapshot) => {
             if (snapshot.exists()) {
-                const emails = Object.values(snapshot.val());
-                const worksheet = XLSX.utils.json_to_sheet(emails.map(email => ({ Email: email })));
+                const emails = [];
+                snapshot.forEach((childSnapshot) => {
+                    emails.push(childSnapshot.val());
+                });
+
+                const worksheet = XLSX.utils.json_to_sheet(emails.map(email => ({ Email: email.email })));
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, 'Emails');
 
